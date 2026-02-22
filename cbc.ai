@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBC AI - Your Kenyan Curriculum Study Buddy</title>
+    <meta name="description" content="AI-powered learning assistant for Kenyan CBC curriculum. Get help with homework, past papers, and subject explanations.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🇰🇪</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #1e40af 100%);
+            min-height: 100vh;
+        }
+        
+        h1, h2, h3, .brand-font {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .message-bubble {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .typing-dot {
+            animation: typing 1.4s infinite ease-in-out both;
+        }
+        
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        .subject-card {
+            transition: all 0.3s ease;
+        }
+        
+        .subject-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .chat-container {
+            height: calc(100vh - 200px);
+        }
+
+        .sidebar-item {
+            transition: all 0.2s;
+        }
+        
+        .sidebar-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .sidebar-item.active {
+            background: rgba(255,255,255,0.2);
+            border-left: 3px solid #fbbf24;
+        }
+
+        /* Kenyan flag colors accent */
+        .kenya-red { color: #dc2626; }
+        .kenya-green { color: #16a34a; }
+        .kenya-black { color: #1f2937; }
+        
+        .pulse-ring {
+            position: absolute;
+            border-radius: 50%;
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+        
+        @keyframes pulse-ring {
+            0% { transform: scale(0.33); }
+            80%, 100% { opacity: 0; }
+        }
+    </style>
+<base target="_blank">
+</head>
+<body class="text-gray-100 overflow-hidden">
+
+    <!-- Main Layout -->
+    <div class="flex h-screen">
+        
+        <!-- Sidebar -->
+        <aside class="w-64 glass hidden md:flex flex-col border-r border-white/10">
+            <div class="p-6 border-b border-white/10">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-red-600 to-green-600 rounded-xl flex items-center justify-center text-xl shadow-lg">
+                        🇰🇪
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-xl brand-font">CBC AI</h1>
+                        <p class="text-xs text-gray-400">Kenyan Curriculum</p>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="flex-1 overflow-y-auto py-4">
+                <div class="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">New Chat</div>
+                <button onclick="startNewChat()" class="mx-4 mb-6 w-[calc(100%-2rem)] py-2 px-4 bg-white/10 hover:bg-white/20 rounded-lg flex items-center gap-2 transition text-sm">
+                    <span>+</span> Start New Chat
+                </button>
+
+                <div class="px-4 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Grade Levels</div>
+                <div id="grade-list" class="space-y-1 px-2">
+                    <!-- Populated by JS -->
+                </div>
+
+                <div class="px-4 mt-6 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Subjects</div>
+                <div id="subject-list" class="space-y-1 px-2">
+                    <!-- Populated by JS -->
+                </div>
+            </nav>
+
+            <div class="p-4 border-t border-white/10">
+                <div class="glass rounded-lg p-3 text-xs text-gray-300">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <span class="font-semibold">System Online</span>
+                    </div>
+                    <p>Trained on Kenyan CBC curriculum</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="flex-1 flex flex-col relative">
+            
+            <!-- Mobile Header -->
+            <header class="md:hidden glass p-4 flex items-center justify-between border-b border-white/10">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">🇰🇪</span>
+                    <span class="font-bold brand-font">CBC AI</span>
+                </div>
+                <button onclick="toggleMobileMenu()" class="text-white p-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+            </header>
+
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="hidden md:hidden absolute top-16 left-0 right-0 glass z-50 border-b border-white/10 p-4 max-h-[70vh] overflow-y-auto">
+                <button onclick="startNewChat(); toggleMobileMenu()" class="w-full py-3 mb-4 bg-white/20 rounded-lg font-semibold">+ New Chat</button>
+                <div id="mobile-grade-list" class="mb-4"></div>
+                <div id="mobile-subject-list"></div>
+            </div>
+
+            <!-- Chat Header -->
+            <div class="hidden md:flex items-center justify-between px-6 py-4 border-b border-white/10 glass">
+                <div class="flex items-center gap-4">
+                    <h2 id="current-topic" class="font-semibold text-lg">General Assistant</h2>
+                    <span id="grade-badge" class="px-3 py-1 bg-white/20 rounded-full text-xs font-medium hidden">Grade 7</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="showPastPapers()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm transition flex items-center gap-2">
+                        <span>📄</span> Past Papers
+                    </button>
+                    <button onclick="showAbout()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm transition">
+                        About
+                    </button>
+                </div>
+            </div>
+
+            <!-- Messages Container -->
+            <div id="chat-container" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+                <!-- Welcome Message -->
+                <div class="message-bubble flex gap-4 max-w-4xl mx-auto">
+                    <div class="w-10 h-10 bg-gradient-to-br from-red-600 to-green-600 rounded-full flex items-center justify-center text-lg flex-shrink-0">
+                        🇰🇪
+                    </div>
+                    <div class="flex-1">
+                        <div class="bg-white/10 rounded-2xl rounded-tl-none p-4 backdrop-blur-sm">
+                            <p class="text-lg mb-2 font-semibold">Jambo! 👋 I'm CBC AI</p>
+                            <p class="text-gray-200 leading-relaxed">
+                                I'm your specialized study buddy for the <strong>Kenyan Competency-Based Curriculum (CBC)</strong>. 
+                                I can help you with:
+                            </p>
+                            <ul class="mt-3 space-y-2 text-gray-300">
+                                <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Homework and assignment help</li>
+                                <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Explaining difficult concepts</li>
+                                <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Past paper questions (KCPE/KCSE/CBC)</li>
+                                <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Career guidance and subject selection</li>
+                                <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Kenyan history and civics</li>
+                            </ul>
+                            <p class="mt-4 text-sm text-gray-400">
+                                Select your grade below or ask me anything about the Kenyan curriculum!
+                            </p>
+                        </div>
+                        
+                        <!-- Quick Grade Selection -->
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <button onclick="setGrade('Grade 7')" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-sm transition">Grade 7</button>
+                            <button onclick="setGrade('Grade 8')" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-sm transition">Grade 8</button>
+                            <button onclick="setGrade('Grade 9')" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-sm transition">Grade 9 (Junior Secondary)</button>
+                            <button onclick="setGrade('Grade 12')" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-full text-sm transition">Grade 12 (Senior Secondary)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="border-t border-white/10 glass p-4 md:p-6">
+                <div class="max-w-4xl mx-auto relative">
+                    <div class="flex gap-2 mb-3 overflow-x-auto pb-2" id="quick-actions">
+                        <button onclick="insertPrompt('Explain this topic like I am in Grade 7: ')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-full text-xs whitespace-nowrap transition">📚 Explain like Grade 7</button>
+                        <button onclick="insertPrompt('Help me with this KCSE past paper question: ')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-full text-xs whitespace-nowrap transition">📝 KCSE Help</button>
+                        <button onclick="insertPrompt('What are the career paths for ')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-full text-xs whitespace-nowrap transition">🎯 Career Guidance</button>
+                        <button onclick="insertPrompt('Explain this in Kiswahili: ')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 rounded-full text-xs whitespace-nowrap transition">🇰🇪 Explain in Swahili</button>
+                    </div>
+                    
+                    <div class="flex gap-3 items-end bg-white/5 rounded-2xl p-2 border border-white/10 focus-within:border-white/30 transition">
+                        <textarea 
+                            id="user-input" 
+                            rows="1"
+                            placeholder="Ask me anything about the Kenyan curriculum..."
+                            class="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-400 resize-none max-h-32 py-3 px-3"
+                            onkeydown="handleKeyDown(event)"
+                            oninput="autoResize(this)"
+                        ></textarea>
+                        <button 
+                            onclick="sendMessage()" 
+                            id="send-btn"
+                            class="p-3 bg-gradient-to-r from-red-600 to-green-600 hover:from-red-500 hover:to-green-500 rounded-xl transition transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-2 text-center">
+                        CBC AI can make mistakes. Always verify important information with your teacher or official KICD materials.
+                    </p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Past Papers Modal -->
+    <div id="past-papers-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="glass max-w-2xl w-full rounded-2xl p-6 max-h-[80vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold brand-font">Past Papers & Resources</h3>
+                <button onclick="closeModal('past-papers-modal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="bg-white/5 rounded-xl p-4">
+                    <h4 class="font-semibold mb-3 text-yellow-400">KCSE Past Papers (1995-2023)</h4>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <button onclick="insertPrompt('Show me KCSE Mathematics Paper 1 2023 questions and solutions')" class="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-left transition">Mathematics Paper 1</button>
+                        <button onclick="insertPrompt('Show me KCSE Mathematics Paper 2 2023 questions and solutions')" class="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-left transition">Mathematics Paper 2</button>
+                        <button onclick="insertPrompt('Show me KCSE English Paper 1 2023 questions')" class="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-left transition">English Paper 1</button>
+                        <button onclick="insertPrompt('Show me KCSE Kiswahili Paper 2023 questions')" class="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-left transition">Kiswahili</button>
+                        <button onclick="insertPrompt('Show me KCSE Biology Paper 2023 questions')" class="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-left transition">Biology</button>
+                        <button onclick="insertPrompt('Show me KCSE Chemistry Paper 2023 questions')" class="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-left transition">Chemistry</button>
+                        <button onclick="insertPrompt('Show me KCSE Physics Paper 2023 questions')" class="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-left transition">Physics</button>
+                        <button onclick="insertPrompt('Show me KCSE History Paper 2023 questions')" class="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-left transition">History & Government</button>
+                    </div>
+                </div>
+
+                <div class="bg-white/5 rounded-xl p-4">
+                    <h4 class="font-semibold mb-3 text-yellow-400">CBC Assessment Resources</h4>
+                    <div class="space-y-2 text-sm">
+                        <button onclick="insertPrompt('Show me Grade 7 Mathematics CBC assessment sample')" class="w-full p-2 bg-white/5 hover:bg-white/10 rounded-lg text-left transition">Grade 7 Mathematics Assessment</button>
+                        <button onclick="insertPrompt('Show me Grade 8 Integrated Science CBC assessment')" class="w-full p-2 bg-white/5 hover:bg-white/10 rounded-lg text-left transition">Grade 8 Integrated Science</button>
+                        <button onclick="insertPrompt('Show me Junior Secondary School (JSS) career pathways guide')" class="w-full p-2 bg-white/5 hover:bg-white/10 rounded-lg text-left transition">JSS Career Pathways</button>
+                    </div>
+                </div>
+
+                <div class="bg-white/5 rounded-xl p-4">
+                    <h4 class="font-semibold mb-3 text-yellow-400">Useful Links</h4>
+                    <ul class="space-y-2 text-sm text-gray-300">
+                        <li>• <a href="https://www.knec.ac.ke" target="_blank" class="text-blue-400 hover:underline">KNEC Official Website</a></li>
+                        <li>• <a href="https://www.kicd.ac.ke" target="_blank" class="text-blue-400 hover:underline">KICD Curriculum Portal</a></li>
+                        <li>• <a href="https://www.education.go.ke" target="_blank" class="text-blue-400 hover:underline">Ministry of Education</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- About Modal -->
+    <div id="about-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="glass max-w-lg w-full rounded-2xl p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-2xl font-bold brand-font">About CBC AI</h3>
+                <button onclick="closeModal('about-modal')" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div class="space-y-4 text-gray-300">
+                <p>
+                    <strong>CBC AI</strong> is a specialized educational assistant designed specifically for the Kenyan Competency-Based Curriculum (CBC).
+                </p>
+                <div class="bg-white/5 rounded-lg p-4">
+                    <h4 class="font-semibold text-white mb-2">Key Features:</h4>
+                    <ul class="space-y-1 text-sm">
+                        <li>• Aligned with KICD curriculum guidelines</li>
+                        <li>• Covers Grade 1 through Senior Secondary</li>
+                        <li>• Supports all CBC learning areas</li>
+                        <li>• Past paper analysis and solutions</li>
+                        <li>• Career guidance for pathway selection</li>
+                        <li>• Bilingual support (English/Kiswahili)</li>
+                    </ul>
+                </div>
+                <p class="text-sm">
+                    <strong>Disclaimer:</strong> This is an AI assistant for educational support. Always verify critical information with official KICD materials and your teachers.
+                </p>
+                <div class="text-center pt-4">
+                    <p class="text-xs text-gray-400">Made with 🇰🇪 for Kenyan learners</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // CBC Curriculum Data
+        const cbcData = {
+            grades: [
+                'Grade 1', 'Grade 2', 'Grade 3', 'Grade 4', 'Grade 5', 'Grade 6',
+                'Grade 7 (JSS)', 'Grade 8 (JSS)', 'Grade 9 (JSS)',
+                'Grade 10', 'Grade 11', 'Grade 12'
+            ],
+            subjects: {
+                primary: ['Mathematics', 'English', 'Kiswahili', 'Environmental Activities', 'Hygiene and Nutrition', 'Religious Education', 'Movement and Creative Activities'],
+                junior: ['Mathematics', 'English', 'Kiswahili', 'Integrated Science', 'Social Studies', 'Creative Arts', 'Agriculture', 'Pre-Technical Studies', 'Computer Science', 'Business Studies', 'Life Skills'],
+                senior: {
+                    STEM: ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'Computer Studies'],
+                    Humanities: ['History', 'Geography', 'CRE', 'IRE', 'HRE'],
+                    Languages: ['English', 'Kiswahili', 'French', 'German', 'Arabic'],
+                    Arts: ['Art and Design', 'Music', 'Drama', 'Home Science'],
+                    Business: ['Business Studies', 'Economics', 'Agriculture']
+                }
+            },
+            pathways: {
+                'Arts and Sports Science': ['Music', 'Art and Design', 'Drama', 'Physical Education'],
+                'Social Sciences': ['History', 'Geography', 'CRE', 'IRE', 'HRE', 'Economics'],
+                'Science, Technology, Engineering and Mathematics (STEM)': ['Mathematics', 'Physics', 'Chemistry', 'Biology', 'Computer Studies'],
+                'Technical and Vocational': ['Agriculture', 'Home Science', 'Computer Studies', 'Business Studies']
+            }
+        };
+
+        // State
+        let currentGrade = null;
+        let currentSubject = null;
+        let chatHistory = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSidebar();
+            renderMobileMenu();
+        });
+
+        function renderSidebar() {
+            const gradeList = document.getElementById('grade-list');
+            const subjectList = document.getElementById('subject-list');
+            
+            // Render grades
+            gradeList.innerHTML = cbcData.grades.map(grade => `
+                <button onclick="setGrade('${grade}')" class="sidebar-item w-full text-left px-4 py-2 rounded-lg text-sm text-gray-300 hover:text-white ${currentGrade === grade ? 'active' : ''}">
+                    ${grade}
+                </button>
+            `).join('');
+
+            // Render subjects based on grade level
+            let subjects = [];
+            if (!currentGrade) {
+                subjects = ['Mathematics', 'English', 'Kiswahili', 'Science', 'Social Studies'];
+            } else if (currentGrade.includes('JSS') || parseInt(currentGrade.match(/\d+/)[0]) <= 9) {
+                subjects = cbcData.subjects.junior;
+            } else {
+                subjects = [...new Set([...cbcData.subjects.senior.STEM, ...cbcData.subjects.senior.Humanities, ...cbcData.subjects.senior.Languages])];
+            }
+
+            subjectList.innerHTML = subjects.map(subject => `
+                <button onclick="setSubject('${subject}')" class="sidebar-item w-full text-left px-4 py-2 rounded-lg text-sm text-gray-300 hover:text-white ${currentSubject === subject ? 'active' : ''}">
+                    ${subject}
+                </button>
+            `).join('');
+        }
+
+        function renderMobileMenu() {
+            document.getElementById('mobile-grade-list').innerHTML = '<div class="text-xs font-semibold text-gray-400 mb-2">GRADES</div>' + 
+                cbcData.grades.map(g => `<button onclick="setGrade('${g}'); toggleMobileMenu()" class="block w-full text-left py-2 text-sm text-gray-300">${g}</button>`).join('');
+            
+            document.getElementById('mobile-subject-list').innerHTML = '<div class="text-xs font-semibold text-gray-400 mb-2">SUBJECTS</div>' + 
+                cbcData.subjects.junior.map(s => `<button onclick="setSubject('${s}'); toggleMobileMenu()" class="block w-full text-left py-2 text-sm text-gray-300">${s}</button>`).join('');
+        }
+
+        function setGrade(grade) {
+            currentGrade = grade;
+            document.getElementById('grade-badge').textContent = grade;
+            document.getElementById('grade-badge').classList.remove('hidden');
+            document.getElementById('current-topic').textContent = grade + ' Assistant';
+            renderSidebar();
+            
+            addMessage('system', `Switched to ${grade}. I will now provide answers appropriate for ${grade} level in the Kenyan CBC curriculum.`);
+        }
+
+        function setSubject(subject) {
+            currentSubject = subject;
+            document.getElementById('current-topic').textContent = subject + (currentGrade ? ` • ${currentGrade}` : '');
+            renderSidebar();
+        }
+
+        function toggleMobileMenu() {
+            document.getElementById('mobile-menu').classList.toggle('hidden');
+        }
+
+        function startNewChat() {
+            document.getElementById('chat-container').innerHTML = '';
+            currentGrade = null;
+            currentSubject = null;
+            document.getElementById('grade-badge').classList.add('hidden');
+            document.getElementById('current-topic').textContent = 'General Assistant';
+            renderSidebar();
+            
+            // Add welcome message
+            setTimeout(() => {
+                addMessage('assistant', 'Jambo! 👋 I\'ve reset our conversation. How can I help you today?');
+            }, 100);
+        }
+
+        function insertPrompt(text) {
+            const input = document.getElementById('user-input');
+            input.value = text;
+            input.focus();
+            autoResize(input);
+        }
+
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 128) + 'px';
+        }
+
+        function handleKeyDown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Add user message
+            addMessage('user', message);
+            input.value = '';
+            input.style.height = 'auto';
+            
+            // Show typing indicator
+            showTyping();
+            
+            // Generate response
+            setTimeout(() => {
+                removeTyping();
+                const response = generateResponse(message);
+                addMessage('assistant', response);
+            }, 1000 + Math.random() * 1000);
+        }
+
+        function addMessage(role, content) {
+            const container = document.getElementById('chat-container');
+            const isUser = role === 'user';
+            
+            const div = document.createElement('div');
+            div.className = 'message-bubble flex gap-4 max-w-4xl mx-auto';
+            
+            if (isUser) {
+                div.innerHTML = `
+                    <div class="flex-1 flex justify-end">
+                        <div class="bg-blue-600 rounded-2xl rounded-tr-none p-4 max-w-[80%]">
+                            <p class="text-white">${escapeHtml(content)}</p>
+                        </div>
+                    </div>
+                    <div class="w-10 h-10 bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        👤
+                    </div>
+                `;
+            } else {
+                const avatar = role === 'system' ? '⚙️' : '🇰🇪';
+                const bgClass = role === 'system' ? 'bg-yellow-500/20 border border-yellow-500/30' : 'bg-white/10';
+                
+                div.innerHTML = `
+                    <div class="w-10 h-10 bg-gradient-to-br from-red-600 to-green-600 rounded-full flex items-center justify-center text-lg flex-shrink-0">
+                        ${avatar}
+                    </div>
+                    <div class="flex-1">
+                        <div class="${bgClass} rounded-2xl rounded-tl-none p-4 backdrop-blur-sm">
+                            <div class="prose prose-invert max-w-none text-gray-200">
+                                ${formatResponse(content)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function showTyping() {
+            const container = document.getElementById('chat-container');
+            const div = document.createElement('div');
+            div.id = 'typing-indicator';
+            div.className = 'message-bubble flex gap-4 max-w-4xl mx-auto';
+            div.innerHTML = `
+                <div class="w-10 h-10 bg-gradient-to-br from-red-600 to-green-600 rounded-full flex items-center justify-center text-lg flex-shrink-0">
+                    🇰🇪
+                </div>
+                <div class="flex-1">
+                    <div class="bg-white/10 rounded-2xl rounded-tl-none p-4 backdrop-blur-sm w-20">
+                        <div class="flex gap-1">
+                            <div class="w-2 h-2 bg-white rounded-full typing-dot"></div>
+                            <div class="w-2 h-2 bg-white rounded-full typing-dot"></div>
+                            <div class="w-2 h-2 bg-white rounded-full typing-dot"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function removeTyping() {
+            const indicator = document.getElementById('typing-indicator');
+            if (indicator) indicator.remove();
+        }
+
+        // CBC Knowledge Base
+        function generateResponse(input) {
+            const lower = input.toLowerCase();
+            
+            // Grade-specific context
+            const gradeContext = currentGrade ? `For ${currentGrade}: ` : '';
+            
+            // Kenyan/CBC specific responses
+            if (lower.includes('kcpe') || lower.includes('kcse')) {
+                return `**Kenyan National Examinations Transition**\n\nThe KCPE (Kenya Certificate of Primary Education) was last administered in 2023. Kenya has transitioned to the Competency-Based Curriculum (CBC):\n\n• **2023**: Last KCPE cohort\n• **2024**: First KPSEA (Kenya Primary School Education Assessment) for Grade 6\n• **2027**: First KCBE (Kenya Certificate of Basic Education) replacing KCSE\n\nThe new system emphasizes:\n- Continuous assessment over final exams\n- Practical skills and competencies\n- Three pathways in Senior Secondary: Arts, STEM, and Social Sciences\n\nWould you like to know about the new assessment structure for ${currentGrade || 'your grade'}?`;
+            }
+            
+            if (lower.includes('pathway') || lower.includes('career') || lower.includes('subject selection')) {
+                return `**CBC Senior Secondary Pathways**\n\nIn Grades 10-12, students choose one of four pathways:\n\n1. **🎨 Arts & Sports Science**\n   - Music, Art & Design, Drama, PE\n   - Careers: Artist, Athlete, Designer, Coach\n\n2. **🔬 STEM (Science, Tech, Engineering, Math)**\n   - Physics, Chemistry, Biology, Computer Studies\n   - Careers: Engineer, Doctor, Programmer, Architect\n\n3. **📚 Social Sciences**\n   - History, Geography, CRE/IRE/HRE, Economics\n   - Careers: Lawyer, Teacher, Social Worker, Economist\n\n4. **🛠️ Technical & Vocational**\n   - Agriculture, Home Science, Business, Computing\n   - Careers: Entrepreneur, Chef, Farmer, Technician\n\n**Requirements**: You need at least C+ in related subjects to pursue a pathway.\n\nWhich pathway interests you? I can explain the subject combinations and career options.`;
+            }
+            
+            if (lower.includes('kiswahili') || lower.includes('swahili')) {
+                if (lower.includes('explain') || lower.includes('fafanua')) {
+                    return `**Kiswahili katika Mtaala wa CBC**\n\nKiswahili ni moja ya masomo muhimu katika mtaala wa Kenya. Hapa kuna maeneo makuu:\n\n**Sarufi (Grammar):**\n- Viwakilishi (Pronouns): mimi, wewe, yeye, sisi, ninyi, wao\n- Vinyume: kubwa → dogo, refu → fupi\n- Wakati wa vitenzi: li-, me-, na-, ta-\n\n**Fasihi (Literature):**\n- Mashairi: Tumbo lisiloshiba, Malenga wapya\n- Hadithi: Maua ya utenzi, Mapenzi ya Fujo\n\n**Insha (Composition):**\n- Insha za wasifu (descriptive)\n- Insha za ripoti (reports)\n- Barua rasmi na isiyo rasmi\n\nUnahitaji msaada wa kipengele gani hasa?`;
+                }
+                return `**Kiswahili in Kenyan CBC**\n\nKiswahili is one of Kenya's official languages and a compulsory subject. Key areas:\n\n**Language Skills:**\n- **Sarufi**: Grammar rules, sentence construction\n- **Fasihi**: Literature analysis (poetry, novels, plays)\n- **Insha**: Essay writing (formal/informal letters, creative writing)\n\n**Assessment:**\n- Paper 1: Language and composition\n- Paper 2: Literature and comprehension\n- Paper 3: Oral skills and poetry recitation\n\nWould you like help with a specific Kiswahili topic, or would you like me to explain something in Kiswahili?`;
+            }
+            
+            if (lower.includes('mathematics') || lower.includes('math')) {
+                if (currentGrade && currentGrade.includes('JSS')) {
+                    return `${gradeContext}**Junior Secondary Mathematics (CBC)**\n\nKey strands for ${currentGrade}:\n\n**Numbers & Algebra:**\n- Integers, fractions, decimals\n- Algebraic expressions and equations\n- Linear equations and inequalities\n\n**Measurement:**\n- Pythagoras theorem\n- Area and volume of 3D shapes\n- Trigonometry basics\n\n**Geometry:**\n- Angle properties\n- Transformations (rotation, reflection, translation)\n- Similarity and congruence\n\n**Data Handling:**\n- Probability\n- Statistics (mean, median, mode)\n- Graphs and charts\n\n**Tip**: CBC Math emphasizes problem-solving in real-life Kenyan contexts (business, agriculture, construction).\n\nWhat topic are you struggling with?`;
+                }
+                return `${gradeContext}**Mathematics in Kenyan Curriculum**\n\nMathematics is compulsory through all grades. The CBC approach focuses on:\n\n• **Conceptual understanding** over memorization\n• **Real-world applications**: Banking, farming, construction\n• **Technology integration**: Using calculators and software\n• **Group work**: Collaborative problem solving\n\n**Key Challenge Areas for Kenyan Students:**\n1. Algebra and quadratic equations\n2. Trigonometry and bearings\n3. Calculus (Senior Secondary)\n4. Statistics and probability\n\nWould you like me to explain a specific concept with Kenyan examples (like calculating farm yield or business profit)?`;
+            }
+            
+            if (lower.includes('science') || lower.includes('biology') || lower.includes('chemistry') || lower.includes('physics')) {
+                return `${gradeContext}**Integrated Science & Pure Sciences**\n\n**Junior Secondary (Grade 7-9):**\nIntegrated Science combines:\n- Biology: Cells, human body, plants, environment\n- Chemistry: Matter, acids/bases, periodic table\n- Physics: Force, energy, electricity, magnetism\n\n**Senior Secondary (Grade 10-12):**\nSciences separate into:\n- **Biology**: Human anatomy, genetics, ecology, reproduction\n- **Chemistry**: Organic chemistry, thermodynamics, electrochemistry\n- **Physics**: Mechanics, waves, electricity, nuclear physics\n\n**Practical Focus:**\nCBC emphasizes lab work and practical assessments (20% of final grade).\n\n**Career Links:**\n- Medicine, Engineering, Agriculture, Environmental Science\n\nWhich science topic do you need help with? I can provide notes, past paper solutions, or practical experiment guides.`;
+            }
+            
+            if (lower.includes('history') || lower.includes('social studies')) {
+                return `**History & Government (Kenyan Curriculum)**\n\n**Key Topics in CBC:**\n\n**Pre-Colonial Kenya:**\n- Bantu, Nilotic, Cushitic migrations\n- Traditional governance systems (Council of Elders)\n- Economic activities: pastoralism, agriculture, trade\n\n**Colonial Period (1895-1963):**\n- British East Africa Company\n- Building of Kenya-Uganda Railway\n- Mau Mau Uprising (1952-1960)\n- Road to independence\n\n**Independent Kenya:**\n- Jomo Kenyatta era (1963-1978)\n- Moi era (1978-2002)\n- Kibaki, Uhuru, and Ruto administrations\n- Devolution and 2010 Constitution\n\n**Government Structure:**\n- National government: Executive, Legislature, Judiciary\n- County governments (47 counties)\n- Functions of national vs. county government\n\n**Current Affairs:**\nI can discuss recent Kenyan political developments and their historical context.\n\nWhat period or topic would you like to explore?`;
+            }
+            
+            if (lower.includes('agriculture') || lower.includes('farming')) {
+                return `**Agriculture in Kenyan CBC**\n\nAgriculture is a key subject reflecting Kenya's economy (24% of GDP).\n\n**Crop Production:**\n- **Cash crops**: Tea, coffee, pyrethrum, horticulture\n- **Food crops**: Maize, beans, rice, wheat\n- **Farming systems**: Large-scale vs. small-scale\n\n**Animal Husbandry:**\n- Dairy farming (Kenya is Africa's top dairy producer)\n- Beef production\n- Poultry and beekeeping\n- Fish farming (aquaculture)\n\n**Agribusiness:**\n- Value addition and processing\n- Marketing cooperatives (like KCC, KTDA)\n- Agricultural finance and insurance\n\n**Sustainable Practices:**\n- Conservation agriculture\n- Organic farming\n- Water harvesting (negarim, zai pits)\n\n**Exam Focus:**\n- Soil science and conservation\n- Pest and disease management\n- Farm records and accounts\n\nAre you preparing for Agriculture KCSE or need help with a farming project?`;
+            }
+            
+            if (lower.includes('business') || lower.includes('commerce') || lower.includes('economics')) {
+                return `**Business Studies & Economics**\n\n**Business Studies (CBC):**\n\n**Forms of Business Ownership:**\n- Sole proprietorship (most common in Kenya)\n- Partnerships\n- Limited companies (public vs. private)\n- Cooperatives (very important in Kenya: Saccos, cooperatives)\n\n**Trade:**\n- Home trade: Wholesale, retail, e-commerce\n- Foreign trade: Imports/exports, balance of trade\n- Documents: Invoice, receipt, delivery note\n\n**Accounting:**\n- Cash book, ledger accounts\n- Trial balance\n- Final accounts (Trading, Profit & Loss, Balance Sheet)\n\n**Economics:**\n- Microeconomics: Demand/supply, market structures\n- Macroeconomics: Inflation, unemployment, GDP\n- Kenyan economic issues: Debt, unemployment, Vision 2030\n\n**Local Context:**\n- M-Pesa and mobile money revolution\n- Informal sector (Jua Kali)\n- EAC integration and trade\n\nNeed help with accounting calculations or economic concepts?`;
+            }
+            
+            if (lower.includes('computer') || lower.includes('ict') || lower.includes('coding')) {
+                return `**Computer Studies & ICT in Kenya**\n\n**Junior Secondary:**\n- Computer hardware and software\n- Word processing, spreadsheets, databases\n- Internet and email safety\n- Introduction to programming (Scratch, Python)\n\n**Senior Secondary (Computer Studies):**\n- **Theory**: Data representation, logic gates, operating systems\n- **Programming**: Python, Java, or Visual Basic\n- **Databases**: SQL, MS Access\n- **Networking**: LAN, WAN, topologies, security\n\n**Emerging Technologies:**\n- Artificial Intelligence and Machine Learning\n- Blockchain and cryptocurrency context in Kenya\n- Mobile app development (Android/Kotlin)\n\n**Kenyan Context:**\n- Konza Technopolis (Kenya's Silicon Savannah)\n- M-Pesa API integration\n- Tech startups ecosystem (iHub, Nairobi Garage)\n\n**Practical Skills:**\n- Website development (HTML, CSS, JavaScript)\n- Database design\n- Algorithm design and flowcharts\n\nWant to learn coding or need help with a Computer Studies project?`;
+            }
+            
+            if (lower.includes('cre') || lower.includes('ire') || lower.includes('hre') || lower.includes('religion')) {
+                return `**Religious Education in Kenya**\n\nKenya offers three Religious Education options:\n\n**CRE (Christian Religious Education):**\n- Old Testament: Creation, Abraham, Moses, David\n- New Testament: Life of Jesus, Parables, Early Church\n- Christian living: Ethics, family, work\n- African Traditional Religion context\n\n**IRE (Islamic Religious Education):**\n- Quran and Hadith\n- Pillars of Islam\n- Islamic history and civilization\n- Islamic law and ethics\n\n**HRE (Hindu Religious Education):**\n- Vedas and Upanishads\n- Concept of God and karma\n- Hindu festivals and ceremonies\n- Hindu ethics and values\n\n**Common Themes:**\n- Moral values and decision making\n- Family and marriage\n- Work and leisure\n- Responsible citizenship\n\nAll RE subjects focus on moral formation and character development in line with Kenyan values.\n\nWhich aspect would you like to study?`;
+            }
+            
+            if (lower.includes('past paper') || lower.includes('kcse') || lower.includes('exam')) {
+                return `**Past Paper Help**\n\nI can help you with:\n\n1. **Solving specific questions** - Share the question text and I'll work through it step-by-step\n\n2. **Exam techniques:**\n   - Time management (3 hours per paper)\n   - How to structure essay answers\n   - Common mistakes to avoid\n\n3. **Marking scheme understanding:**\n   - How KCSE marks are allocated\n   - What examiners look for\n\n4. **Subject-specific tips:**\n   - **Math**: Show all working, check units\n   - **Sciences**: Label diagrams, use correct terminology\n   - **Languages**: Plan essays, check grammar\n   - **Humanities**: Use examples from Kenya\n\n**To get help:** Paste the exact question you want solved, or ask about a specific year and paper (e.g., \"KCSE Mathematics Paper 1 2022 Question 15\").\n\nWhat would you like to work on?`;
+            }
+            
+            if (lower.includes('hello') || lower.includes('jambo') || lower.includes('habari')) {
+                return `Jambo! 👋 Habari yako?\n\nI'm CBC AI, your Kenyan curriculum study buddy. I can help you with:\n\n• Homework and assignments\n• Explaining difficult concepts\n• Past paper solutions\n• Career guidance and pathway selection\n• Kenyan history and current affairs\n\n**Ninaweza kukuambia kwa Kiswahili pia!** (I can also explain in Swahili!)\n\nWhat subject or topic would you like help with today?`;
+            }
+            
+            // Default response with CBC context
+            return `${gradeContext}Thanks for your question about "${input.substring(0, 50)}...". 
+
+I'm specialized in the Kenyan CBC curriculum, so I can provide detailed help on subjects like Mathematics, Sciences, Languages, Humanities, and Technical subjects.
+
+**To give you the best help, could you clarify:**
+- Which subject is this for? (Math, Biology, History, etc.)
+- What grade level? (Grade 7, KCSE candidate, etc.)
+- Is this for homework, exam prep, or general understanding?
+
+Or if you have a specific past paper question, paste it here and I'll solve it step-by-step!`;
+        }
+
+        function formatResponse(text) {
+            // Simple markdown-like formatting
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>')
+                .replace(/•/g, '&bull;')
+                .replace(/(\d\..*?)(?=<br>|$)/g, '<div class="ml-4 my-1">$1</div>');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function showPastPapers() {
+            document.getElementById('past-papers-modal').classList.remove('hidden');
+        }
+
+        function showAbout() {
+            document.getElementById('about-modal').classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        // Close modals on outside click
+        window.onclick = function(event) {
+            if (event.target.classList.contains('fixed')) {
+                event.target.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
